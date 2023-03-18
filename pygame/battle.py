@@ -21,6 +21,11 @@ background_image = pygame.image.load('img/Background/background.png').convert_al
 #Panel image
 panel_image = pygame.image.load('img/Icons/panel.png').convert_alpha()
 
+#Create function for drawing text
+def draw_text(text, font, text_col, x, y):
+    img = font.render(text, True, text_col)
+    screen.blit(img, x, y)
+
 #TODO: Refactor to only 1 function for drawing
 #Function for drawing background
 def draw_bg():
@@ -42,16 +47,44 @@ class Fighter():
         self.start_potions = potions
         self.potions = potions
         self.alive = True
+        self.animation_list = []
+        self.frame_index = 0
+        #Control if it's idle or fighting {0:idle, 1:attack, 2:hurt, 3:dead}
+        self.action = 0
+        self.update_time = pygame.time.get_ticks()
+        #load images
+        temp_list = []
+
         #Defining image for each Fighter whether it's a Knight or Enemy
         #Scaling image to be bigger
-        img = pygame.image.load(f'img/{self.name}/Idle/0.png')
-        self.image = pygame.transform.scale(img, (img.get_width() * 3, img.get_height()*3))
+        for image in range(8):
+            img = pygame.image.load(f'img/{self.name}/Idle/{image}.png')
+            img = pygame.transform.scale(img, (img.get_width() * 3, img.get_height()*3))
+            temp_list.append(img)
+        self.animation_list.append(temp_list)
+        self.image = self.animation_list[self.action][self.frame_index]
         self.rect = self.image.get_rect()
         self.rect.center = (x,y)
     
-    #Function for drawing a Fighter
+    
     def draw(self):
+        '''Function for drawing a Fighter'''
         screen.blit(self.image, self.rect)
+
+    def animate(self):
+        '''Animate the character based off the animation_list'''
+        animation_cooldwon=100
+        #Handle animation
+        #Update image
+        self.image = self.animation_list[self.action][self.frame_index]
+        #Take the current time, substract when it was last update. if greater ? update : don't update
+        if pygame.time.get_ticks() - self.update_time > animation_cooldwon:
+                self.update_time = pygame.time.get_ticks()
+                self.frame_index +=1
+        #If the animation has run out then reset back to 0
+        self.frame_index = 0 if self.frame_index >= len(self.animation_list[self.action]) else self.frame_index
+
+    
 
 #Instance of the fighter class
 knight = Fighter(200, 260, 'Knight', 30, 10, 3)
@@ -72,11 +105,14 @@ while run:
     draw_bg()
     #Draw panel
     draw_panel()
+    #Update animation
+    knight.animate()
     #Draw fighters
     knight.draw()
 
     #Draw bandits
     for bandit in bandit_list:
+        bandit.animate()
         bandit.draw()
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
