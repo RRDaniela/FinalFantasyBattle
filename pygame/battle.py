@@ -14,6 +14,19 @@ screen_height=400 + bottom_panel
 screen = pygame.display.set_mode((screen_width, screen_height))
 pygame.display.set_caption('Battle')
 
+#define game variables
+current_fighter=1
+total_fighters=3
+action_cooldown = 0
+action_wait_time = 90
+
+#define fonts
+font = pygame.font.SysFont('Times New Roman', 26)
+
+#define colors
+red = (255, 0, 0)
+green = (0,255,0)
+
 #Load images
 #Background images
 #TODO: Refactor to a dictionary
@@ -24,7 +37,7 @@ panel_image = pygame.image.load('img/Icons/panel.png').convert_alpha()
 #Create function for drawing text
 def draw_text(text, font, text_col, x, y):
     img = font.render(text, True, text_col)
-    screen.blit(img, x, y)
+    screen.blit(img, (x, y))
 
 #TODO: Refactor to only 1 function for drawing
 #Function for drawing background
@@ -33,7 +46,13 @@ def draw_bg():
 
 #Function for drawing panel
 def draw_panel():
+    #Draw panel rectangle
     screen.blit(panel_image, (0, screen_height - bottom_panel))
+    #Show knight stats
+    draw_text(f'{knight.name} HP: {knight.max_health}', font, red, 100, screen_height-bottom_panel + 10)
+    for count, i in enumerate(bandit_list):
+        draw_text(f'{i.name} HP: {i.max_health}', font, red, 550, (screen_height-bottom_panel + 10) + count*60)
+
 
 #TODO: Move to a separate file (Fighter)
 #Fighter class
@@ -84,12 +103,33 @@ class Fighter():
         #If the animation has run out then reset back to 0
         self.frame_index = 0 if self.frame_index >= len(self.animation_list[self.action]) else self.frame_index
 
+class HealthBar():
+    def __init__(self, x, y, hp, max_hp):
+        self.x = x
+        self.y=y
+        self.hp=hp
+        self.max_hp=max_hp
+
+    def draw(self, hp):
+        #Update with new health
+        self.hp = hp
+        #Calculate health ratio
+        ratio = self.hp /self.max_hp
+        pygame.draw.rect(screen, red, (self.x, self.y, 150, 20))
+        pygame.draw.rect(screen, green, (self.x, self.y, 150*ratio, 20))
+
+
     
 
 #Instance of the fighter class
 knight = Fighter(200, 260, 'Knight', 30, 10, 3)
 bandit_1 = Fighter(550, 270, 'Bandit', 20,10,3)
 bandit_2 = Fighter(700, 270, 'Bandit', 20,10,3)
+
+#Instance of the Health bar
+knight_healthbar = HealthBar(100, screen_height-bottom_panel+40, knight.hp, knight.max_health)
+bandit1_healthbar = HealthBar(550, screen_height-bottom_panel+40, bandit_1.hp, bandit_1.max_health)
+bandit2_healthbar = HealthBar(550, screen_height-bottom_panel+100, bandit_2.hp, bandit_2.max_health)
 
 #Adding bandits to a list
 bandit_list = []
@@ -105,6 +145,9 @@ while run:
     draw_bg()
     #Draw panel
     draw_panel()
+    knight_healthbar.draw(knight.hp)
+    bandit1_healthbar.draw(bandit_1.hp)
+    bandit2_healthbar.draw(bandit_2.hp)
     #Update animation
     knight.animate()
     #Draw fighters
